@@ -1,0 +1,225 @@
+package jcob;
+
+import java.util.*;
+import java.io.*;
+import java_cup.runtime.*;
+import jcob.bean.*;
+import jcob.bean.data.*;
+import jcob.bean.identification.*;
+
+// Keywords
+terminal DIVISION;
+terminal SECTION;
+
+terminal IDENTIFICATION;
+terminal PROGRAMID;
+terminal AUTHOR;
+terminal INSTALLATION;
+terminal SECURITY;
+
+terminal ENVIRONMENT;
+
+terminal DATA;
+terminal FILE;
+terminal WORKINGSTORAGE;
+terminal LOCALSTORAGE;
+terminal LINKAGE;
+
+terminal PROCEDURE;
+terminal SCREEN;
+terminal PIC;
+terminal LINE;
+terminal COL;
+terminal VALUE;
+terminal FROM;
+terminal MOVE;
+terminal DISPLAY;
+terminal ADD;
+terminal TO;
+terminal STOP;
+terminal RUN;
+terminal LPAREN;
+terminal RPAREN;
+
+terminal java.lang.String IDENTIFIER;
+
+// Literals
+terminal java.lang.Number INTEGER_LITERAL;
+terminal java.lang.String NUMERIC;
+terminal java.lang.String STRING_LITERAL;
+
+// Operators
+terminal DOT;
+
+// 19.3) Lexical Structure
+//non terminal literal;
+// 19.4) Types, Values, and Variables
+//non terminal primitive_type;
+// 19.5) Names
+//non terminal name;
+//non terminal type;
+//non terminal ops;
+
+// Our simplified grammar
+non terminal CobolFile                          cobol_file;
+/* Identification */
+non terminal IdentificationDivision             identification_division_opt;
+non terminal LinkedList<IdentificationElement>  identification_elements_opt;
+non terminal IdentificationElement              identification_element;
+/* Environment */
+non terminal EnvironmentDivision                environment_division_opt;
+non terminal                                    environment_division;
+/* Data */
+non terminal DataDivision                       data_division_opt;
+non terminal FileSection                        data_file_section_opt;
+non terminal WorkingStorageSection              data_working_storage_section_opt;
+non terminal LinkedList<DataEntry>              data_working_storage_elements_opt;
+non terminal DataEntry                          data_working_storage_element;
+non terminal LocalStorageSection                data_local_storage_section_opt;
+non terminal LinkageSection                     data_linkage_section_opt;
+non terminal ScreenSection                      data_screen_section_opt;
+/* Procedure */
+non terminal ProcedureDivision                  procedure_division_opt;
+non terminal                                    procedure_division;
+/* Standard */
+non terminal java.lang.String                   level;
+non terminal java.lang.String                   type;
+non terminal java.lang.String                   alpha_type;
+non terminal java.lang.String                   numeric_type;
+
+// TODO
+start with cobol_file;
+
+cobol_file ::=
+    identification_division_opt:id
+    environment_division_opt:env 
+    data_division_opt:data
+    procedure_division_opt:proc                                     {: RESULT = new CobolFile(id, env, data, proc); :}
+    ;
+
+/*******************
+ * Identification
+ * TODO   |  DATEWRITTEN DOT IDENTIFIER DOT
+          |  DATECOMPILED DOT IDENTIFIER DOT
+*******************/
+identification_division_opt ::= 
+    IDENTIFICATION DIVISION DOT identification_elements_opt:il      {: RESULT = new IdentificationDivision(il); :}
+    |                                                               {: RESULT = null; :}
+    ;
+
+identification_elements_opt ::= 
+    identification_elements_opt:l identification_element:e          {: l.add(e); RESULT = l; :}
+    |                                                               {: RESULT = new LinkedList<IdentificationElement>(); :}
+    ;
+
+identification_element ::=
+    PROGRAMID DOT IDENTIFIER:i DOT                                  {: RESULT = new IdentificationProgramId(i); :}
+  | AUTHOR DOT IDENTIFIER:i DOT                                     {: RESULT = new IdentificationAuthor(i); :}
+  | INSTALLATION DOT IDENTIFIER DOT
+  | SECURITY DOT IDENTIFIER DOT
+  ;
+
+/*******************
+ * Environment
+*******************/
+environment_division_opt ::= 
+    environment_division                                            {: RESULT = new EnvironmentDivision(); :}
+    |                                                               {: RESULT = null; :}
+    ;
+
+environment_division ::= 
+    ENVIRONMENT DIVISION DOT
+    ;
+
+/*******************
+ * Data
+*******************/
+data_division_opt ::= 
+    DATA DIVISION DOT
+    data_file_section_opt:fs
+    data_working_storage_section_opt:wss
+    data_local_storage_section_opt:lss
+    data_linkage_section_opt:ls
+    data_screen_section_opt:ss                                      {: RESULT = new DataDivision(fs, wss, lss, ls, ss); :} 
+    |                                                               {: RESULT = null; :} 
+    ;
+
+data_file_section_opt ::= 
+    FILE SECTION DOT                                                {: RESULT = new FileSection(); :}
+    |                                                               {: RESULT = null; :} 
+    ;
+
+data_working_storage_section_opt ::= 
+    WORKINGSTORAGE SECTION DOT data_working_storage_elements_opt:l  {: RESULT = new WorkingStorageSection(l); :}
+    |                                                               {: RESULT = null; :} 
+    ;
+
+data_working_storage_elements_opt ::= 
+    data_working_storage_elements_opt:l
+    data_working_storage_element:e                                  {: l.add(e); RESULT = l; :}
+    |                                                               {: RESULT = new LinkedList<DataEntry>(); :}
+    ;
+
+data_working_storage_element ::=
+    level:l IDENTIFIER:i PIC type:t DOT                             {: RESULT = new DataElementEntry(l, i, t); :}
+  | level:l IDENTIFIER:i DOT                                        {: RESULT = new DataRecordEntry(l, i); :}
+  ;
+
+data_local_storage_section_opt ::= 
+    LOCALSTORAGE SECTION DOT                                        {: RESULT = new LocalStorageSection(); :}
+    |                                                               {: RESULT = null; :} 
+    ;
+
+data_linkage_section_opt ::= 
+    LINKAGE SECTION DOT                                             {: RESULT = new LinkageSection(); :}
+    |                                                               {: RESULT = null; :} 
+    ;
+
+data_screen_section_opt ::= 
+    SCREEN SECTION DOT                                              {: RESULT = new ScreenSection(); :}
+    |                                                               {: RESULT = null; :} 
+    ;
+
+/*******************
+ * Procedure
+*******************/
+procedure_division_opt ::= 
+    procedure_division                                              {: RESULT = new ProcedureDivision(); :}  
+    |                                                               {: RESULT = null; :}
+    ;
+
+procedure_division ::= 
+    PROCEDURE DIVISION DOT
+    ;
+
+/*******************
+ * Standard
+*******************/
+type ::=
+    alpha_type:a                                                    {: RESULT = a; :}
+  | numeric_type:n                                                  {: RESULT = n; :}
+  | IDENTIFIER:i numeric_type:n                                     {: RESULT = i + n; :}
+  ;
+
+alpha_type ::=
+    IDENTIFIER:i                                                    {: RESULT = i; :} 
+  | IDENTIFIER:i LPAREN INTEGER_LITERAL:il RPAREN                   {: RESULT = i + '(' + String.valueOf(il) + ')'; :} 
+  ;
+
+numeric_type ::=
+    INTEGER_LITERAL:il                                              {: RESULT = String.valueOf(il); :} 
+  | INTEGER_LITERAL:il LPAREN INTEGER_LITERAL:il2 RPAREN            {: RESULT = String.valueOf(il) + '(' + String.valueOf(il2) + ')'; :} 
+  | INTEGER_LITERAL:il IDENTIFIER:i INTEGER_LITERAL:il2             {: RESULT = String.valueOf(il) + i + String.valueOf(il2); :} 
+  | INTEGER_LITERAL:il LPAREN INTEGER_LITERAL:il2 RPAREN 
+    IDENTIFIER:i INTEGER_LITERAL:il3                                {: RESULT = String.valueOf(il) + '(' + String.valueOf(il2) + ')' + i + String.valueOf(il3); :} 
+  | INTEGER_LITERAL:il IDENTIFIER:i INTEGER_LITERAL:il2 
+    LPAREN INTEGER_LITERAL:il3 RPAREN                               {: RESULT = String.valueOf(il) + i + String.valueOf(il2) + '(' + String.valueOf(il3) + ')'; :} 
+  | INTEGER_LITERAL:il LPAREN INTEGER_LITERAL:il2 RPAREN 
+    IDENTIFIER:i INTEGER_LITERAL:il3 LPAREN INTEGER_LITERAL:il4 
+    RPAREN                                                          {: RESULT = String.valueOf(il) + '(' + String.valueOf(il2) + ')' + i + String.valueOf(il3) + '(' + String.valueOf(il4) + ')'; :} 
+  ;
+  
+level ::=
+    INTEGER_LITERAL:i                                               {: RESULT = String.valueOf(i); :} 
+  | NUMERIC:n                                                       {: RESULT = n; :} 
+  ;
