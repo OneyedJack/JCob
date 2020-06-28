@@ -9,6 +9,12 @@ import org.junit.After;
 import org.junit.Test;
 
 import jcob.bean.CobolFile;
+import jcob.bean.data.DataElement;
+import jcob.bean.data.DataEntry;
+import jcob.bean.data.DataRecord;
+import jcob.bean.data.DataScreenEntry;
+import jcob.bean.data.DataScreenInstruction;
+import jcob.bean.data.DataScreenLineInstruction;
 import jcob.bean.identification.IdentificationAuthor;
 import jcob.bean.identification.IdentificationElement;
 import jcob.bean.identification.IdentificationProgramId;
@@ -54,8 +60,7 @@ public class ParserTest {
   @Test
   public void parse_IdentificationDivitionAuthor() throws Exception {
     String program = "IDENTIFICATION DIVISION."
-        + "AUTHOR. Xavier."
-        + "";
+        + "AUTHOR. Xavier.";
     scan(program);
     parse();
     assertTrue(cobolFile != null);
@@ -70,8 +75,7 @@ public class ParserTest {
   public void parse_IdentificationDivitionProgramIdAuthor() throws Exception {
     String program = "IDENTIFICATION DIVISION."
         + "PROGRAM-ID. Manipulation."
-        + "AUTHOR. Xavier."
-        + "";
+        + "AUTHOR. Xavier.";
     scan(program);
     parse();
     assertTrue(cobolFile != null);
@@ -84,6 +88,92 @@ public class ParserTest {
     assertTrue(ie2 instanceof IdentificationAuthor);
     IdentificationAuthor ia = (IdentificationAuthor)ie2;
     assertTrue("Xavier".equals(ia.getAuthor()));
+  }
+
+  @Test
+  public void parse_DataDivition() throws Exception {
+    String program = "DATA DIVISION.";
+    scan(program);
+    parse();
+    assertTrue(cobolFile != null);
+    assertTrue(cobolFile.getDataDivision() != null);
+  }
+
+  @Test
+  public void parse_DataDivitionScreenSection() throws Exception {
+    String program = "DATA DIVISION."
+        + "SCREEN SECTION.";
+    scan(program);
+    parse();
+    assertTrue(cobolFile != null);
+    assertTrue(cobolFile.getDataDivision() != null && cobolFile.getDataDivision().getScreenSection() != null);
+  }
+
+  @Test
+  public void parse_DataDivitionScreenSection2() throws Exception {
+    String program = "DATA DIVISION."
+        + "SCREEN SECTION."
+        + "1 pla-res.";
+    scan(program);
+    parse();
+    assertTrue(cobolFile != null);
+    assertTrue(cobolFile.getDataDivision() != null && cobolFile.getDataDivision().getScreenSection() != null && cobolFile.getDataDivision().getScreenSection().getDataEntrys().size() == 1);
+    DataEntry de = cobolFile.getDataDivision().getScreenSection().getDataEntrys().get(0);
+    assertTrue(de instanceof DataRecord);
+    DataRecord dre = (DataRecord)de;
+    assertTrue("1".equals(dre.getLevel()) && "pla-res".equals(dre.getName()));
+  }
+
+  @Test
+  public void parse_DataDivitionScreenSectionLineInst() throws Exception {
+    String program = "DATA DIVISION."
+        + "SCREEN SECTION."
+        + "1 pla-res."
+        + "2 LINE a.";
+    scan(program);
+    parse();
+    assertTrue(cobolFile != null);
+    assertTrue(cobolFile.getDataDivision() != null && cobolFile.getDataDivision().getScreenSection() != null && cobolFile.getDataDivision().getScreenSection().getDataEntrys().size() == 2);
+    DataEntry de1 = cobolFile.getDataDivision().getScreenSection().getDataEntrys().get(0);
+    assertTrue(de1 instanceof DataRecord);
+    DataRecord dre = (DataRecord)de1;
+    assertTrue("1".equals(dre.getLevel()) && "pla-res".equals(dre.getName()));
+    DataEntry de2 = cobolFile.getDataDivision().getScreenSection().getDataEntrys().get(1);
+    assertTrue(de2 instanceof DataScreenEntry);
+    DataScreenEntry dse = (DataScreenEntry)de2;
+    assertTrue("2".equals(dse.getLevel()) && dse.getDataScreenElements().size() == 1);
+    DataScreenInstruction dsi = dse.getDataScreenElements().get(0);
+    assertTrue(dsi instanceof DataScreenLineInstruction);
+    DataScreenLineInstruction dsli = (DataScreenLineInstruction)dsi;
+    assertTrue("a".equals(dsli.getValue()));
+  }
+
+  @Test
+  public void parse_Program() throws Exception {
+    String program = "IDENTIFICATION DIVISION." + 
+        "PROGRAM-ID. Manipulation." + 
+        "" + 
+        "DATA DIVISION." + 
+        "WORKING-STORAGE SECTION." + 
+        "77 a PIC 99." + 
+        "" + 
+        "SCREEN SECTION." + 
+        "" + 
+        "1 pla-res." + 
+        "    2 LINE a COL 10." + 
+        "    2 PIC 99 FROM a VALUE \"Valeur de a :\"." + 
+        "" + 
+        "PROCEDURE DIVISION." + 
+        "" + 
+        "MOVE 5 TO a." + 
+        "DISPLAY pla-res." + 
+        "ADD 2 TO a." + 
+        "DISPLAY pla-res." + 
+        "" + 
+        "STOP RUN.";
+    scan(program);
+    parse();
+    assertTrue(cobolFile != null);
   }
 
   private void scan(String input) {

@@ -99,6 +99,8 @@ Numeric = [0-9]*
 <YYINITIAL> "to"                 { return symbol(sym.TO); }
 <YYINITIAL> "stop"               { return symbol(sym.STOP); }
 <YYINITIAL> "run"                { return symbol(sym.RUN); }
+<YYINITIAL> "end"                { return symbol(sym.END); }
+<YYINITIAL> "program"            { return symbol(sym.PROGRAM); }
 <YYINITIAL> "("                  { return symbol(sym.LPAREN); }
 <YYINITIAL> ")"                  { return symbol(sym.RPAREN); }
 
@@ -126,11 +128,9 @@ Numeric = [0-9]*
 
 <STRING> {
   \"                             { yybegin(YYINITIAL);
-                                   return symbol(sym.STRING_LITERAL,
-                                   string.toString()); }
+                                   return symbol(sym.STRING_LITERAL, string.toString()); }
   \'                             { yybegin(YYINITIAL);
-                                   return symbol(sym.STRING_LITERAL,
-                                   string.toString()); }
+                                   return symbol(sym.STRING_LITERAL, string.toString()); }
   [^\n\r\"\\]+                   { string.append( yytext() ); }
   \\t                            { string.append('\t'); }
   \\n                            { string.append('\n'); }

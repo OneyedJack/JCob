@@ -2,6 +2,7 @@ package jcob.bean;
 
 import jcob.bean.data.DataDivision;
 import jcob.bean.identification.IdentificationDivision;
+import jcob.bean.procedure.ProcedureDivision;
 
 public class CobolFile
 {

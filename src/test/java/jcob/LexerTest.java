@@ -29,12 +29,27 @@ public class LexerTest {
     scan("helloWorld");
     assertThat(nextToken()).isEqualTo(sym.IDENTIFIER);
   }
+  
+  @Test
+  public void scan_tokenQuote() throws Exception {
+    scan("\"helloWorld\"");
+    assertThat(nextToken()).isEqualTo(sym.STRING_LITERAL);
+  }
 
   @Test
-  public void scan() throws Exception {
+  public void scan_IdentificationDivision() throws Exception {
     scan("IDENTIFICATION DIVISION.");
     assertThat(nextToken()).isEqualTo(sym.IDENTIFICATION);
     assertThat(nextToken()).isEqualTo(sym.DIVISION);
+    assertThat(nextToken()).isEqualTo(sym.DOT);
+    assertThat(nextToken()).isEqualTo(sym.EOF);
+  }
+  
+  @Test
+  public void scan_ProcedureDisplayInstruction() throws Exception {
+    scan("DISPLAY pla-res.");
+    assertThat(nextToken()).isEqualTo(sym.DISPLAY);
+    assertThat(nextToken()).isEqualTo(sym.IDENTIFIER);
     assertThat(nextToken()).isEqualTo(sym.DOT);
     assertThat(nextToken()).isEqualTo(sym.EOF);
   }

@@ -6,6 +6,25 @@ import java_cup.runtime.*;
 import jcob.bean.*;
 import jcob.bean.data.*;
 import jcob.bean.identification.*;
+import jcob.bean.procedure.*;
+
+parser code  {: 
+  public void report_error(String message, Object info) {
+    StringBuilder m = new StringBuilder("Error ");
+
+    if (info instanceof java_cup.runtime.Symbol) 
+      m.append( "("+info.toString()+")" );
+     
+    m.append(" : "+message);
+   
+    System.out.println(m);
+  }
+   
+  public void report_fatal_error(String message, Object info) {
+    report_error(message, info);
+    throw new RuntimeException("Fatal Syntax Error");
+  }
+:};
 
 // Keywords
 terminal DIVISION;
@@ -38,6 +57,8 @@ terminal ADD;
 terminal TO;
 terminal STOP;
 terminal RUN;
+terminal END;
+terminal PROGRAM;
 terminal LPAREN;
 terminal RPAREN;
 
@@ -78,14 +99,25 @@ non terminal DataEntry                          data_working_storage_element;
 non terminal LocalStorageSection                data_local_storage_section_opt;
 non terminal LinkageSection                     data_linkage_section_opt;
 non terminal ScreenSection                      data_screen_section_opt;
+non terminal LinkedList<DataEntry>              data_screen_elements_opt;
+non terminal DataEntry                          data_screen_element;
+non terminal LinkedList<DataScreenInstruction>  data_screen_instructions_opt;
+non terminal DataScreenInstruction              data_screen_instruction;
 /* Procedure */
 non terminal ProcedureDivision                  procedure_division_opt;
-non terminal                                    procedure_division;
+non terminal LinkedList<ProcedureEntry>         procedure_elements_opt;
+non terminal ProcedureEntry                     procedure_element;
+non terminal ProcedureMoveInstruction           procedure_move_instruction;
+non terminal ProcedureAddInstruction            procedure_add_instruction;
+non terminal ProcedureDisplayInstruction        procedure_display_instruction;
+/* End */
+non terminal                                    end_division;
 /* Standard */
-non terminal java.lang.String                   level;
 non terminal java.lang.String                   type;
 non terminal java.lang.String                   alpha_type;
 non terminal java.lang.String                   numeric_type;
+non terminal java.lang.String                   level;
+non terminal java.lang.String                   indentifier_integer;
 
 // TODO
 start with cobol_file;
@@ -94,7 +126,8 @@ cobol_file ::=
     identification_division_opt:id
     environment_division_opt:env 
     data_division_opt:data
-    procedure_division_opt:proc                                     {: RESULT = new CobolFile(id, env, data, proc); :}
+    procedure_division_opt:proc
+    end_division                                                    {: RESULT = new CobolFile(id, env, data, proc); :}
     ;
 
 /*******************
@@ -161,8 +194,8 @@ data_working_storage_elements_opt ::=
     ;
 
 data_working_storage_element ::=
-    level:l IDENTIFIER:i PIC type:t DOT                             {: RESULT = new DataElementEntry(l, i, t); :}
-  | level:l IDENTIFIER:i DOT                                        {: RESULT = new DataRecordEntry(l, i); :}
+    level:l IDENTIFIER:i PIC type:t DOT                             {: RESULT = new DataElement(l, i, t); :}
+  | level:l IDENTIFIER:i DOT                                        {: RESULT = new DataRecord(l, i); :}
   ;
 
 data_local_storage_section_opt ::= 
@@ -176,21 +209,76 @@ data_linkage_section_opt ::=
     ;
 
 data_screen_section_opt ::= 
-    SCREEN SECTION DOT                                              {: RESULT = new ScreenSection(); :}
+    SCREEN SECTION DOT data_screen_elements_opt:l                   {: RESULT = new ScreenSection(l); :}
     |                                                               {: RESULT = null; :} 
     ;
+
+data_screen_elements_opt ::= 
+    data_screen_elements_opt:l
+    data_screen_element:e                                           {: l.add(e); RESULT = l; :}
+    |                                                               {: RESULT = new LinkedList<DataEntry>(); :}
+    ;
+
+data_screen_element ::=
+    level:l data_screen_instructions_opt:i DOT                      {: RESULT = new DataScreenEntry(l, i); :}
+  | level:l IDENTIFIER:i DOT                                        {: RESULT = new DataRecord(l, i); :}
+  ;
+
+data_screen_instructions_opt ::=
+    data_screen_instructions_opt:l
+    data_screen_instruction:e                                       {: l.add(e); RESULT = l; :}
+    |                                                               {: RESULT = new LinkedList<DataScreenInstruction>(); :}
+    ;
+
+data_screen_instruction ::=
+    LINE indentifier_integer:i                                      {: RESULT = new DataScreenLineInstruction(i); :}
+  | COL indentifier_integer:i                                       {: RESULT = new DataScreenColInstruction(i); :}
+  | VALUE STRING_LITERAL:s                                          {: RESULT = new DataScreenValueInstruction(s); :}
+  | PIC type:t                                                      {: RESULT = new DataScreenPicInstruction(t); :}
+  | FROM indentifier_integer:i                                      {: RESULT = new DataScreenFromInstruction(i); :}
+  ;
 
 /*******************
  * Procedure
 *******************/
 procedure_division_opt ::= 
-    procedure_division                                              {: RESULT = new ProcedureDivision(); :}  
+    PROCEDURE DIVISION DOT procedure_elements_opt:l                 {: RESULT = new ProcedureDivision(l); :}
     |                                                               {: RESULT = null; :}
     ;
 
-procedure_division ::= 
-    PROCEDURE DIVISION DOT
+procedure_elements_opt ::= 
+    procedure_elements_opt:l
+    procedure_element:e                                             {: l.add(e); RESULT = l; :}
+    |                                                               {: RESULT = new LinkedList<ProcedureEntry>(); :}
     ;
+
+procedure_element ::=
+    IDENTIFIER:i DOT                                                {: RESULT = new ProcedureRecord(i); :}
+  | procedure_move_instruction:i                                    {: RESULT = i; :}
+  | procedure_add_instruction:i                                     {: RESULT = i; :}
+  | procedure_display_instruction:i                                 {: RESULT = i; :}
+  ;
+
+procedure_move_instruction ::=
+    MOVE indentifier_integer:i1 TO IDENTIFIER:i2 DOT                {: RESULT = new ProcedureMoveInstruction(i1, i2); :}
+    ;
+
+procedure_add_instruction ::=
+    ADD indentifier_integer:i1 TO IDENTIFIER:i2 DOT                 {: RESULT = new ProcedureAddInstruction(i1, i2); :}
+    ;
+
+procedure_display_instruction ::=
+    DISPLAY IDENTIFIER:i DOT                                        {: RESULT = new ProcedureDisplayInstruction(i); :}
+    ;
+
+/*******************
+ * End
+*******************/
+end_division ::=
+    STOP RUN DOT
+  | END PROGRAM IDENTIFIER DOT
+  | /* TODO A supprimer */
+  ;
 
 /*******************
  * Standard
@@ -222,4 +310,9 @@ numeric_type ::=
 level ::=
     INTEGER_LITERAL:i                                               {: RESULT = String.valueOf(i); :} 
   | NUMERIC:n                                                       {: RESULT = n; :} 
+  ;
+
+indentifier_integer ::=
+    INTEGER_LITERAL:i                                               {: RESULT = String.valueOf(i); :} 
+  | IDENTIFIER:i                                                    {: RESULT = i; :} 
   ;

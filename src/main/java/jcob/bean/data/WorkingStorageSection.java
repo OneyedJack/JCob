@@ -4,22 +4,22 @@ import java.util.List;
 
 public class WorkingStorageSection
 {
-  List<DataEntry> DataEntrys;
+  List<DataEntry> dataEntrys;
 
   public WorkingStorageSection(List<DataEntry> dataEntrys)
   {
     super();
-    DataEntrys = dataEntrys;
+    this.dataEntrys = dataEntrys;
   }
 
   public List<DataEntry> getDataEntrys()
   {
-    return DataEntrys;
+    return dataEntrys;
   }
 
   public void setDataEntrys(List<DataEntry> dataEntrys)
   {
-    DataEntrys = dataEntrys;
+    this.dataEntrys = dataEntrys;
   }
 
 }
