@@ -21,5 +21,14 @@ public class IdentificationDivision
   {
     this.identificationElements = identificationElements;
   }
-
+  
+  public String getProgramId()
+  {
+    IdentificationElement ie = identificationElements.stream().filter(e -> e instanceof IdentificationProgramId).findFirst().orElse(null);
+    if (ie != null)
+    {
+      return ((IdentificationProgramId)ie).getProgramId();
+    }
+    return "Program";
+  }
 }

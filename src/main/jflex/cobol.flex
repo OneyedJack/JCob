@@ -73,12 +73,15 @@ Numeric = [0-9]*
 <YYINITIAL> "section"            { return symbol(sym.SECTION); }
 /* Identification */
 <YYINITIAL> "identification"     { return symbol(sym.IDENTIFICATION); }
+<YYINITIAL> "id"                 { return symbol(sym.ID); }
 <YYINITIAL> "program-id"         { return symbol(sym.PROGRAMID); }
 <YYINITIAL> "author"             { return symbol(sym.AUTHOR); }
 <YYINITIAL> "installation"       { return symbol(sym.INSTALLATION); }
 <YYINITIAL> "security"           { return symbol(sym.SECURITY); }
 /* Environment */
 <YYINITIAL> "environment"        { return symbol(sym.ENVIRONMENT); }
+<YYINITIAL> "configuration"      { return symbol(sym.CONFIGURATION); }
+<YYINITIAL> "input-output"       { return symbol(sym.INPUTOUTPUT); }
 /* Data */
 <YYINITIAL> "data"               { return symbol(sym.DATA); }
 <YYINITIAL> "file"               { return symbol(sym.FILE); }

@@ -5,6 +5,7 @@ import java.io.*;
 import java_cup.runtime.*;
 import jcob.bean.*;
 import jcob.bean.data.*;
+import jcob.bean.environment.*;
 import jcob.bean.identification.*;
 import jcob.bean.procedure.*;
 
@@ -31,12 +32,15 @@ terminal DIVISION;
 terminal SECTION;
 
 terminal IDENTIFICATION;
+terminal ID;
 terminal PROGRAMID;
 terminal AUTHOR;
 terminal INSTALLATION;
 terminal SECURITY;
 
 terminal ENVIRONMENT;
+terminal CONFIGURATION;
+terminal INPUTOUTPUT;
 
 terminal DATA;
 terminal FILE;
@@ -72,15 +76,6 @@ terminal java.lang.String STRING_LITERAL;
 // Operators
 terminal DOT;
 
-// 19.3) Lexical Structure
-//non terminal literal;
-// 19.4) Types, Values, and Variables
-//non terminal primitive_type;
-// 19.5) Names
-//non terminal name;
-//non terminal type;
-//non terminal ops;
-
 // Our simplified grammar
 non terminal CobolFile                          cobol_file;
 /* Identification */
@@ -89,7 +84,8 @@ non terminal LinkedList<IdentificationElement>  identification_elements_opt;
 non terminal IdentificationElement              identification_element;
 /* Environment */
 non terminal EnvironmentDivision                environment_division_opt;
-non terminal                                    environment_division;
+non terminal ConfigurationSection               configuration_section_opt;
+non terminal InputOutputSection                 input_output_section_opt;
 /* Data */
 non terminal DataDivision                       data_division_opt;
 non terminal FileSection                        data_file_section_opt;
@@ -156,12 +152,20 @@ identification_element ::=
  * Environment
 *******************/
 environment_division_opt ::= 
-    environment_division                                            {: RESULT = new EnvironmentDivision(); :}
+    ENVIRONMENT DIVISION DOT
+    configuration_section_opt:c
+    input_output_section_opt:ios                                    {: RESULT = new EnvironmentDivision(c, ios); :}
     |                                                               {: RESULT = null; :}
     ;
 
-environment_division ::= 
-    ENVIRONMENT DIVISION DOT
+configuration_section_opt ::= 
+    CONFIGURATION SECTION DOT                                       {: RESULT = new ConfigurationSection(); :}
+    |                                                               {: RESULT = null; :} 
+    ;
+
+input_output_section_opt ::= 
+    INPUTOUTPUT SECTION DOT                                         {: RESULT = new InputOutputSection(); :}
+    |                                                               {: RESULT = null; :} 
     ;
 
 /*******************

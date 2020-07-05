@@ -1,6 +1,7 @@
 package jcob.bean;
 
 import jcob.bean.data.DataDivision;
+import jcob.bean.environment.EnvironmentDivision;
 import jcob.bean.identification.IdentificationDivision;
 import jcob.bean.procedure.ProcedureDivision;
 
